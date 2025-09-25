@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Estoque Diário</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="text-slate-800" style="background: url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-attachment: fixed;">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+        <header class="text-center mb-10 p-4 rounded-lg bg-white/80 backdrop-blur-sm shadow-lg">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Gerenciamento de Estoque e Vendas</h1>
+            <p class="text-slate-600 mt-2">Gerencie seus produtos e veja o relatório de vendas do dia.</p>
+        </header>
+
+        <main>
+            <!-- Abas de Navegação -->
+            <div class="mb-4 p-1.5 bg-gray-200/80 backdrop-blur-sm rounded-lg flex space-x-2">
+                <button id="tab-daily-btn" class="flex-1 py-2 px-4 font-semibold text-center rounded-md shadow bg-white text-indigo-600">
+                    Lançamentos & Relatórios
+                </button>
+                <button id="tab-products-btn" class="flex-1 py-2 px-4 font-semibold text-center rounded-md text-gray-500 hover:bg-white/60 hover:text-indigo-600">
+                    Adicionar/Gerenciar Produtos
+                </button>
+            </div>
+
+            <!-- Conteúdo da Aba de Lançamentos -->
+            <div id="content-daily">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Lançamentos de Vendas do Dia</h2>
+                    <form id="add-daily-record-form" class="space-y-4">
+                        <div>
+                            <label for="daily-product-select" class="block text-sm font-medium text-slate-700">Selecione o Produto</label>
+                            <select id="daily-product-select" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option>Nenhum produto cadastrado</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="initial-stock" class="block text-sm font-medium text-slate-700">Estoque Inicial</label>
+                                <input type="number" id="initial-stock" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Opcional">
+                            </div>
+                            <div>
+                                <label for="final-stock" class="block text-sm font-medium text-slate-700">Estoque Final</label>
+                                <input type="number" id="final-stock" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Opcional">
+                            </div>
+                        </div>
+                        <div class="text-center bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <p class="text-sm font-medium text-slate-700">O lançamento será registrado com a data e hora atuais:</p>
+                            <p id="current-timestamp" class="font-bold text-indigo-600 text-lg"></p>
+                        </div>
+                        <p id="record-error" class="text-sm text-red-600 text-center h-4"></p>
+                        <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-150 ease-in-out">
+                            Registrar Lançamento
+                        </button>
+                    </form>
+
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold mb-2">Lançamentos de Hoje</h3>
+                        <div id="daily-records-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
+                            <!-- Lançamentos diários serão inseridos aqui -->
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-4 border-t">
+                        <button id="generate-report-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out text-lg">
+                            Gerar Relatório de Vendas
+                        </button>
+                    </div>
+
+                    <!-- Seção de Histórico -->
+                    <div class="mt-6 pt-6 border-t border-dashed">
+                        <h3 class="text-xl font-semibold mb-4 text-slate-800">Consultar Histórico</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="history-date" class="block text-sm font-medium text-slate-700">Selecione a data</label>
+                                <input type="date" id="history-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <button id="view-history-btn" class="w-full bg-slate-700 text-white font-semibold py-2 px-4 rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition duration-150 ease-in-out">
+                                Visualizar Relatório Anterior
+                            </button>
+                            <p id="history-message" class="text-sm text-red-600 text-center h-4"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo da Aba de Produtos -->
+            <div id="content-products" class="hidden">
+                 <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Gerenciar Produtos</h2>
+                    <form id="add-product-form" class="space-y-4">
+                        <div>
+                            <select id="product-category" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus L-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="" disabled selected>Selecione uma categoria</option>
+                                <option value="Mercearia">Mercearia</option>
+                                <option value="Frios e Laticínios">Frios e Laticínios</option>
+                                <option value="Matinais e Padaria">Matinais e Padaria</option>
+                                <option value="Hortifrúti">Hortifrúti</option>
+                                <option value="Doces">Doces</option>
+                                <option value="Salgadinhos">Salgadinhos</option>
+                                <option value="Bebidas Doces">Bebidas Doces</option>
+                                <option value="Refrigerantes">Refrigerantes</option>
+                                <option value="Cervejas">Cervejas</option>
+                                <option value="Vinhos">Vinhos</option>
+                                <option value="Produtos de Limpeza">Produtos de Limpeza</option>
+                                <option value="Produtos de Higiene">Produtos de Higiene</option>
+                            </select>
+                        </div>
+                        <div id="subcategory-container" class="hidden">
+                            <label for="product-subcategory" class="block text-sm font-medium text-slate-700">Subcategoria (Tamanho)</label>
+                            <select id="product-subcategory" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <!-- Options will be added by JS -->
+                            </select>
+                        </div>
+                        <div id="common-products-container" class="hidden">
+                            <label for="common-product-select" class="block text-sm font-medium text-slate-700">Produtos Comuns (atalho)</label>
+                            <select id="common-product-select" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <!-- Options will be added by JS -->
+                            </select>
+                            <p class="text-center text-sm text-slate-500 my-2">-- OU --</p>
+                        </div>
+                        <div>
+                            <label for="product-name" class="block text-sm font-medium text-slate-700">Nome do Produto / Marca</label>
+                            <input type="text" id="product-name" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Selecione um atalho ou digite aqui">
+                        </div>
+                        <div>
+                            <label for="low-stock-threshold" class="block text-sm font-medium text-slate-700">Alerta de Estoque Baixo</label>
+                            <input type="number" id="low-stock-threshold" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ex: 5">
+                            <p class="text-xs text-slate-500 mt-1">Quando a quantidade for igual ou menor que este valor, um alerta será exibido.</p>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                            Adicionar Produto
+                        </button>
+                    </form>
+
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold mb-2">Produtos Cadastrados</h3>
+                        <div class="max-h-96 overflow-y-auto pr-2">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Produto</th>
+                                        <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Alerta</th>
+                                        <th scope="col" class="relative px-4 py-2">
+                                            <span class="sr-only">Ações</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-list" class="bg-white divide-y divide-slate-200">
+                                    <!-- Produtos serão inseridos aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal do Relatório -->
+    <div id="report-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl transform transition-all duration-300 ease-in-out scale-95">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Relatório de Vendas</h2>
+                        <p id="report-date" class="text-sm text-slate-500"></p>
+                    </div>
+                    <button id="close-modal-btn" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+                </div>
+                <div class="mt-4 max-h-[60vh] overflow-y-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Produto</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Est. Inicial</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Est. Final</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider text-green-600">Vendas (Calc)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-body" class="bg-white divide-y divide-slate-200">
+                            <!-- Conteúdo do relatório aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Elementos do DOM ---
+            const tabDailyBtn = document.getElementById('tab-daily-btn');
+            const tabProductsBtn = document.getElementById('tab-products-btn');
+            const contentDaily = document.getElementById('content-daily');
+            const contentProducts = document.getElementById('content-products');
+            const currentTimestampEl = document.getElementById('current-timestamp');
+
+            const addProductForm = document.getElementById('add-product-form');
+            const productNameInput = document.getElementById('product-name');
+            const productCategorySelect = document.getElementById('product-category');
+            const subcategoryContainer = document.getElementById('subcategory-container');
+            const productSubcategorySelect = document.getElementById('product-subcategory');
+            const commonProductsContainer = document.getElementById('common-products-container');
+            const commonProductSelect = document.getElementById('common-product-select');
+            const lowStockThresholdInput = document.getElementById('low-stock-threshold');
+            const productsList = document.getElementById('products-list');
+            const dailyProductSelect = document.getElementById('daily-product-select');
+            const addDailyRecordForm = document.getElementById('add-daily-record-form');
+            const initialStockInput = document.getElementById('initial-stock');
+            const finalStockInput = document.getElementById('final-stock');
+            const recordError = document.getElementById('record-error');
+            const dailyRecordsList = document.getElementById('daily-records-list');
+            const generateReportBtn = document.getElementById('generate-report-btn');
+            const reportModal = document.getElementById('report-modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const reportDateEl = document.getElementById('report-date');
+            const reportBody = document.getElementById('report-body');
+            const historyDateInput = document.getElementById('history-date');
+            const viewHistoryBtn = document.getElementById('view-history-btn');
+            const historyMessage = document.getElementById('history-message');
+
+            let allProducts = [];
+            let allRecords = [];
+
+            // --- Gerenciamento de Dados (localStorage) ---
+            const Storage = {
+                getProducts: () => JSON.parse(localStorage.getItem('stockAppProducts')) || [],
+                saveProducts: (products) => localStorage.setItem('stockAppProducts', JSON.stringify(products)),
+                getRecords: () => JSON.parse(localStorage.getItem('stockAppRecords')) || [],
+                saveRecords: (records) => localStorage.setItem('stockAppRecords', JSON.stringify(records)),
+            };
+
+            const subcategories = {
+                'Refrigerantes': ['Lata Pequena', 'Lata Grande', '600ml', '1L', '1.5L', '2L', '2.5L'],
+                'Cervejas': ['Lata', 'Latão', 'Long Neck', 'Garrafa 600ml', 'Garrafa 1L', 'Fardo']
+            };
+            
+            const commonProducts = {
+                'Mercearia': ['Arroz T1 5kg', 'Feijão Carioca 1kg', 'Açúcar Refinado 1kg', 'Óleo de Soja 900ml', 'Sal Refinado 1kg', 'Farinha de Trigo 1kg', 'Fubá 1kg', 'Macarrão Espaguete 500g', 'Molho de Tomate 340g', 'Milho em Conserva', 'Ervilha em Conserva', 'Pipoca de Micro-ondas', 'Suco em Pó'],
+                'Frios e Laticínios': ['Leite Integral 1L', 'Leite Condensado 395g', 'Creme de Leite 200g', 'Manteiga 200g', 'Margarina 500g', 'Queijo Mussarela (kg)', 'Queijo Prato (kg)', 'Presunto (kg)', 'Mortadela (kg)', 'Iogurte Natural', 'Requeijão Copo'],
+                'Matinais e Padaria': ['Café em Pó 500g', 'Pão de Forma', 'Biscoito Cream Cracker', 'Biscoito Recheado', 'Achocolatado em pó'],
+                'Hortifrúti': ['Alho (kg)', 'Cebola (kg)', 'Batata (kg)', 'Tomate (kg)', 'Banana (kg)', 'Maçã (kg)'],
+                'Doces': ['Doce de Leite 400g', 'Goiabada 300g', 'Fini Tubes', 'Chocolate em Barra', 'Caixa de Bis', 'Saco de Bala'],
+                'Salgadinhos': ['Batata Chips', 'Salgadinho de Milho'],
+                'Produtos de Limpeza': ['Detergente 500ml', 'Sabão em Pó 1kg', 'Amaciante 2L', 'Água Sanitária 1L', 'Desinfetante 500ml'],
+                'Produtos de Higiene': ['Sabonete', 'Creme Dental', 'Shampoo', 'Condicionador', 'Papel Higiênico (4 rolos)']
+            };
+
+            // --- Funções de Renderização e UI ---
+            function getDisplayName(product) {
+                return `${product.name} ${product.subcategory || ''}`.trim();
+            }
+
+            function renderProducts() {
+                productsList.innerHTML = '';
+                dailyProductSelect.innerHTML = '';
+
+                if (allProducts.length === 0) {
+                    productsList.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-500">Nenhum produto cadastrado.</td></tr>';
+                    dailyProductSelect.innerHTML = '<option disabled selected>Cadastre um produto primeiro</option>';
+                    return;
+                }
+
+                const groupedProducts = allProducts.reduce((acc, product) => {
+                    const category = product.category || 'Sem Categoria';
+                    if (!acc[category]) acc[category] = [];
+                    acc[category].push(product);
+                    return acc;
+                }, {});
+
+                const sortedCategories = Object.keys(groupedProducts).sort();
+
+                sortedCategories.forEach(category => {
+                    const categoryHeaderRow = document.createElement('tr');
+                    categoryHeaderRow.innerHTML = `<td colspan="3" class="bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">${category}</td>`;
+                    productsList.appendChild(categoryHeaderRow);
+                    
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = category;
+
+                    groupedProducts[category].sort((a, b) => a.name.localeCompare(b.name)).forEach(product => {
+                        const displayName = getDisplayName(product);
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-900">${displayName}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">${product.lowStockThreshold}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                                <button data-id="${product.id}" class="delete-product-btn text-red-600 hover:text-red-900">Excluir</button>
+                            </td>
+                        `;
+                        productsList.appendChild(tr);
+                        
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = displayName;
+                        optgroup.appendChild(option);
+                    });
+                    dailyProductSelect.appendChild(optgroup);
+                });
+            }
+            
+            function renderDailyRecords() {
+                const todayDate = new Date().toISOString().split('T')[0];
+                const todayRecords = allRecords.filter(r => r.date === todayDate);
+
+                dailyRecordsList.innerHTML = todayRecords.length === 0 ? '<p class="text-sm text-slate-500 text-center">Nenhum lançamento hoje.</p>' : '';
+                
+                todayRecords.sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00")).forEach(record => {
+                    const p = document.createElement('p');
+                    p.className = 'text-sm text-slate-700 bg-slate-100 p-2 rounded';
+                    let text = `[${record.time}] ${record.productName}: `;
+                    const parts = [];
+                    if (record.initialStock !== null) parts.push(`Início(${record.initialStock})`);
+                    if (record.finalStock !== null) parts.push(`Final(${record.finalStock})`);
+                    p.textContent = text + parts.join(', ');
+                    dailyRecordsList.appendChild(p);
+                });
+            }
+            
+            function showModal() {
+                reportModal.classList.remove('hidden');
+                setTimeout(() => {
+                    reportModal.classList.remove('opacity-0');
+                    reportModal.querySelector('div > div').classList.remove('scale-95');
+                }, 10);
+            }
+
+            function hideModal() {
+                reportModal.classList.add('opacity-0');
+                reportModal.querySelector('div > div').classList.add('scale-95');
+                setTimeout(() => { reportModal.classList.add('hidden'); }, 300);
+            }
+
+            function populateAndShowReportModal(records, dateObj) {
+                reportBody.innerHTML = '';
+                reportDateEl.textContent = dateObj.toLocaleDateString('pt-BR');
+
+                const aggregated = {};
+                const enrichedRecordsWithProduct = records.map(r => ({ ...r, product: allProducts.find(p => p.id === r.productId) })).filter(r => r.product);
+                
+                enrichedRecordsWithProduct.sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00"));
+
+                for (const record of enrichedRecordsWithProduct) {
+                    const id = record.productId;
+                    if (!aggregated[id]) {
+                        aggregated[id] = {
+                            productId: id,
+                            productName: record.productName,
+                            product: record.product,
+                            initialStock: null,
+                            finalStock: null,
+                        };
+                    }
+                    if (record.initialStock !== null && aggregated[id].initialStock === null) {
+                        aggregated[id].initialStock = record.initialStock;
+                    }
+                    if (record.finalStock !== null) {
+                        aggregated[id].finalStock = record.finalStock;
+                    }
+                }
+
+                const finalReportData = Object.values(aggregated).map(agg => {
+                    const sales = (agg.initialStock !== null && agg.finalStock !== null && agg.initialStock >= agg.finalStock)
+                        ? agg.initialStock - agg.finalStock
+                        : null;
+                    return { ...agg, sales };
+                });
+
+                if (finalReportData.length === 0) {
+                    reportBody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-500">Nenhum lançamento encontrado para esta data.</td></tr>';
+                    showModal();
+                    return;
+                }
+
+                const groupedRecords = finalReportData.reduce((acc, record) => {
+                    const category = record.product.category || 'Sem Categoria';
+                    if (!acc[category]) acc[category] = [];
+                    acc[category].push(record);
+                    return acc;
+                }, {});
+
+                Object.keys(groupedRecords).sort().forEach(category => {
+                    const categoryHeaderRow = document.createElement('tr');
+                    categoryHeaderRow.innerHTML = `<td colspan="5" class="bg-slate-100 px-6 py-2 text-sm font-bold text-slate-600">${category}</td>`;
+                    reportBody.appendChild(categoryHeaderRow);
+
+                    groupedRecords[category].sort((a,b) => a.productName.localeCompare(b.productName)).forEach(record => {
+                        const finalStockVal = record.finalStock;
+                        const isLowStock = finalStockVal !== null && finalStockVal <= record.product.lowStockThreshold;
+                        const statusClass = isLowStock ? 'text-red-600 font-bold' : 'text-green-600';
+                        const statusText = finalStockVal === null ? '-' : (isLowStock ? 'BAIXO ESTOQUE!' : 'OK');
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${record.productName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${record.initialStock ?? '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${record.finalStock ?? '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">${record.sales ?? '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${statusText}</td>
+                        `;
+                        reportBody.appendChild(tr);
+                    });
+                });
+                
+                showModal();
+            }
+            
+            function showRecordError(message) {
+                recordError.textContent = message;
+                setTimeout(() => { recordError.textContent = '' }, 3000);
+            }
+
+            function initializeApp() {
+                allProducts = Storage.getProducts();
+                allRecords = Storage.getRecords();
+                renderProducts();
+                renderDailyRecords();
+                setupEventHandlers();
+            }
+            
+            function setupEventHandlers() {
+                // Atualiza o timestamp na tela a cada segundo
+                function updateTimestamp() {
+                    const now = new Date();
+                    currentTimestampEl.textContent = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                }
+                setInterval(updateTimestamp, 1000);
+                updateTimestamp(); // Chamada inicial para mostrar imediatamente
+
+                // Lógica para troca de Abas
+                function handleTabSwitch(e) {
+                    const isDailyTab = e.currentTarget.id === 'tab-daily-btn';
+
+                    contentDaily.classList.toggle('hidden', !isDailyTab);
+                    contentProducts.classList.toggle('hidden', isDailyTab);
+
+                    tabDailyBtn.classList.toggle('bg-white', isDailyTab);
+                    tabDailyBtn.classList.toggle('text-indigo-600', isDailyTab);
+                    tabDailyBtn.classList.toggle('shadow', isDailyTab);
+                    tabDailyBtn.classList.toggle('text-gray-500', !isDailyTab);
+                    
+                    tabProductsBtn.classList.toggle('bg-white', !isDailyTab);
+                    tabProductsBtn.classList.toggle('text-indigo-600', !isDailyTab);
+                    tabProductsBtn.classList.toggle('shadow', !isDailyTab);
+                    tabProductsBtn.classList.toggle('text-gray-500', isDailyTab);
+                }
+
+                tabDailyBtn.addEventListener('click', handleTabSwitch);
+                tabProductsBtn.addEventListener('click', handleTabSwitch);
+                
+                productCategorySelect.addEventListener('change', () => {
+                    const selectedCategory = productCategorySelect.value;
+                    
+                    if (subcategories[selectedCategory]) {
+                        productSubcategorySelect.innerHTML = subcategories[selectedCategory].map(sub => `<option value="${sub}">${sub}</option>`).join('');
+                        subcategoryContainer.classList.remove('hidden');
+                    } else {
+                        subcategoryContainer.classList.add('hidden');
+                        productSubcategorySelect.innerHTML = '';
+                    }
+
+                    if (commonProducts[selectedCategory]) {
+                        let optionsHtml = '<option value="">Selecione um produto...</option>';
+                        optionsHtml += commonProducts[selectedCategory].map(prod => `<option value="${prod}">${prod}</option>`).join('');
+                        commonProductSelect.innerHTML = optionsHtml;
+                        commonProductsContainer.classList.remove('hidden');
+                    } else {
+                        commonProductsContainer.classList.add('hidden');
+                        commonProductSelect.innerHTML = '';
+                    }
+                });
+
+                commonProductSelect.addEventListener('change', () => {
+                    if (commonProductSelect.value) productNameInput.value = commonProductSelect.value;
+                });
+
+                addProductForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const category = productCategorySelect.value;
+                    const newProduct = {
+                        id: Date.now().toString(),
+                        name: productNameInput.value.trim(),
+                        category: category,
+                        lowStockThreshold: parseInt(lowStockThresholdInput.value, 10),
+                        ...(subcategories[category] && { subcategory: productSubcategorySelect.value })
+                    };
+                    if (newProduct.name && newProduct.category && !isNaN(newProduct.lowStockThreshold)) {
+                        allProducts.push(newProduct);
+                        Storage.saveProducts(allProducts);
+                        renderProducts();
+                        addProductForm.reset();
+                        subcategoryContainer.classList.add('hidden');
+                        commonProductsContainer.classList.add('hidden');
+                    }
+                });
+
+                productsList.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-product-btn')) {
+                        const productId = e.target.dataset.id;
+                        allProducts = allProducts.filter(p => p.id !== productId);
+                        Storage.saveProducts(allProducts);
+                        renderProducts();
+                    }
+                });
+
+                addDailyRecordForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const productId = dailyProductSelect.value;
+                    const product = allProducts.find(p => p.id === productId);
+                    const initialStock = initialStockInput.value === '' ? null : parseInt(initialStockInput.value, 10);
+                    const finalStock = finalStockInput.value === '' ? null : parseInt(finalStockInput.value, 10);
+                    
+                    const now = new Date();
+                    const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    const date = now.toISOString().split('T')[0];
+
+                    if (!product || (initialStock === null && finalStock === null)) {
+                        showRecordError('Preencha ao menos um campo de estoque.');
+                        return;
+                    }
+                    if (initialStock !== null && finalStock !== null && initialStock < finalStock) {
+                        showRecordError('Estoque final não pode ser maior que o inicial.');
+                        return;
+                    }
+
+                    allRecords.push({
+                        productId,
+                        productName: getDisplayName(product),
+                        initialStock,
+                        finalStock,
+                        time,
+                        date
+                    });
+                    Storage.saveRecords(allRecords);
+                    renderDailyRecords();
+                    addDailyRecordForm.reset();
+                });
+
+                generateReportBtn.addEventListener('click', () => {
+                    const todayDate = new Date().toISOString().split('T')[0];
+                    const todayRecords = allRecords.filter(r => r.date === todayDate);
+                    populateAndShowReportModal(todayRecords, new Date());
+                });
+
+                viewHistoryBtn.addEventListener('click', () => {
+                    const dateValue = historyDateInput.value;
+                    if (!dateValue) {
+                        historyMessage.textContent = 'Por favor, selecione uma data.';
+                        setTimeout(() => historyMessage.textContent = '', 3000);
+                        return;
+                    }
+                    const historicalRecords = allRecords.filter(r => r.date === dateValue);
+                    const [year, month, day] = dateValue.split('-');
+                    populateAndShowReportModal(historicalRecords, new Date(year, month - 1, day));
+                });
+                
+                closeModalBtn.addEventListener('click', hideModal);
+                reportModal.addEventListener('click', (e) => { if(e.target === reportModal) hideModal(); });
+            }
+            
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
+
