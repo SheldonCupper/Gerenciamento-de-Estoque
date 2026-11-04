@@ -2,6 +2,8 @@
 
 Aplicação web de controle de estoque diário e relatórios, desenvolvida com **HTML, JavaScript e Tailwind CSS**. Projeto de portfólio.
 
+**[🚀 Abrir demonstração online](https://sheldoncupper.github.io/Gerenciamento-de-Estoque/)** · **[💻 Ver código-fonte](https://github.com/SheldonCupper/Gerenciamento-de-Estoque)**
+
 ## Funcionalidades
 
 - Cadastro e exclusão de produtos organizados por categoria e subcategoria.
@@ -17,7 +19,9 @@ Aplicação web de controle de estoque diário e relatórios, desenvolvida com *
 2. Abra o arquivo `index.html` no navegador.
 3. Cadastre produtos e registre os lançamentos.
 
-O projeto também pode ser hospedado como site estático no GitHub Pages, após tornar o repositório público e configurar **Settings → Pages → Deploy from a branch → main / (root)**.
+O projeto está publicado no **GitHub Pages**. Para utilizar no navegador, abra a [demonstração online](https://sheldoncupper.github.io/Gerenciamento-de-Estoque/).
+
+Para atualizar a demonstração, publique alterações na branch `main`; o workflow `.github/workflows/pages.yml` prepara o site estático para o GitHub Pages.
 
 > **Atenção:** os dados ficam apenas no navegador/dispositivo em uso; não há banco de dados remoto, autenticação ou sincronização entre aparelhos. Limpar os dados do site pode remover os registros. A estimativa de vendas é baseada nas quantidades informadas e não considera reposição ou perdas.
 
