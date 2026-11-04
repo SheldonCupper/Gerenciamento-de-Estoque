@@ -25,6 +25,10 @@ Para atualizar a demonstração, publique alterações na branch `main`; o workf
 
 > **Atenção:** os dados ficam apenas no navegador/dispositivo em uso; não há banco de dados remoto, autenticação ou sincronização entre aparelhos. Limpar os dados do site pode remover os registros. A estimativa de vendas é baseada nas quantidades informadas e não considera reposição ou perdas.
 
+## Testes
+
+Antes de usar o sistema como demonstração profissional, consulte o [roteiro de testes manuais](docs/TESTES.md). Os testes de cadastro, relatórios e responsividade devem ser confirmados em um navegador.
+
 ## Tecnologias
 
 - HTML5, CSS e JavaScript (sem framework).
