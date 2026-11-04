@@ -261,6 +261,22 @@
             };
 
             // --- Funções de Renderização e UI ---
+            // Escape de conteúdo não confiável antes de interpolá-lo em innerHTML.
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, char => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                    '"': '&quot;', "'": '&#39;'
+                })[char]);
+            }
+
+            // Usa a data local em vez de UTC para não trocar o dia perto da meia-noite.
+            function getLocalDate(date = new Date()) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
             function getDisplayName(product) {
                 return `${product.name} ${product.subcategory || ''}`.trim();
             }
@@ -286,7 +302,7 @@
 
                 sortedCategories.forEach(category => {
                     const categoryHeaderRow = document.createElement('tr');
-                    categoryHeaderRow.innerHTML = `<td colspan="3" class="bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">${category}</td>`;
+                    categoryHeaderRow.innerHTML = `<td colspan="3" class="bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">${escapeHtml(category)}</td>`;
                     productsList.appendChild(categoryHeaderRow);
                     
                     const optgroup = document.createElement('optgroup');
@@ -296,10 +312,10 @@
                         const displayName = getDisplayName(product);
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-900">${displayName}</td>
-                            <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">${product.lowStockThreshold}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-900">${escapeHtml(displayName)}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">${escapeHtml(product.lowStockThreshold)}</td>
                             <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-                                <button data-id="${product.id}" class="delete-product-btn text-red-600 hover:text-red-900">Excluir</button>
+                                <button data-id="${escapeHtml(product.id)}" class="delete-product-btn text-red-600 hover:text-red-900">Excluir</button>
                             </td>
                         `;
                         productsList.appendChild(tr);
@@ -314,7 +330,7 @@
             }
             
             function renderDailyRecords() {
-                const todayDate = new Date().toISOString().split('T')[0];
+                const todayDate = getLocalDate();
                 const todayRecords = allRecords.filter(r => r.date === todayDate);
 
                 dailyRecordsList.innerHTML = todayRecords.length === 0 ? '<p class="text-sm text-slate-500 text-center">Nenhum lançamento hoje.</p>' : '';
@@ -395,7 +411,7 @@
 
                 Object.keys(groupedRecords).sort().forEach(category => {
                     const categoryHeaderRow = document.createElement('tr');
-                    categoryHeaderRow.innerHTML = `<td colspan="5" class="bg-slate-100 px-6 py-2 text-sm font-bold text-slate-600">${category}</td>`;
+                    categoryHeaderRow.innerHTML = `<td colspan="5" class="bg-slate-100 px-6 py-2 text-sm font-bold text-slate-600">${escapeHtml(category)}</td>`;
                     reportBody.appendChild(categoryHeaderRow);
 
                     groupedRecords[category].sort((a,b) => a.productName.localeCompare(b.productName)).forEach(record => {
@@ -406,10 +422,10 @@
                         
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${record.productName}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${record.initialStock ?? '-'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${record.finalStock ?? '-'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">${record.sales ?? '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${escapeHtml(record.productName)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${escapeHtml(record.initialStock ?? '-')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${escapeHtml(record.finalStock ?? '-')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">${escapeHtml(record.sales ?? '-')}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${statusText}</td>
                         `;
                         reportBody.appendChild(tr);
@@ -498,7 +514,7 @@
                         lowStockThreshold: parseInt(lowStockThresholdInput.value, 10),
                         ...(subcategories[category] && { subcategory: productSubcategorySelect.value })
                     };
-                    if (newProduct.name && newProduct.category && !isNaN(newProduct.lowStockThreshold)) {
+                    if (newProduct.name && newProduct.category && Number.isInteger(newProduct.lowStockThreshold) && newProduct.lowStockThreshold >= 0) {
                         allProducts.push(newProduct);
                         Storage.saveProducts(allProducts);
                         renderProducts();
@@ -526,10 +542,14 @@
                     
                     const now = new Date();
                     const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                    const date = now.toISOString().split('T')[0];
+                    const date = getLocalDate(now);
 
                     if (!product || (initialStock === null && finalStock === null)) {
                         showRecordError('Preencha ao menos um campo de estoque.');
+                        return;
+                    }
+                    if ([initialStock, finalStock].some(value => value !== null && (!Number.isInteger(value) || value < 0))) {
+                        showRecordError('Informe quantidades inteiras e não negativas.');
                         return;
                     }
                     if (initialStock !== null && finalStock !== null && initialStock < finalStock) {
@@ -551,7 +571,7 @@
                 });
 
                 generateReportBtn.addEventListener('click', () => {
-                    const todayDate = new Date().toISOString().split('T')[0];
+                    const todayDate = getLocalDate();
                     const todayRecords = allRecords.filter(r => r.date === todayDate);
                     populateAndShowReportModal(todayRecords, new Date());
                 });
